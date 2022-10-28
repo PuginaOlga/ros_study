@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 from random import randint    #подключение библиотеки
 import rospy
-from std_msgs.msg import String,Bool
+from std_msgs.msg import String
+from roulet.srv import userInfo
 class roulete:
     def __init__(self):       #задаем соотношение цвета и числа
 
@@ -9,9 +10,14 @@ class roulete:
         self.publisher = rospy.Publisher('roulet', String, queue_size = 10)
         rospy.init_node('user')
         self.r = rospy.Rate(10)
-        self.subsriber = rospy.Subscriber('roulet', Bool, self.callback)
+        rospy.wait_for_service('userInfo')
+        try:
+            self.s = rospy.ServiceProxy('userInfo', userInfo)
 
-    def start(self):          #добавление вступления
+        except rospy.ServiceException:
+            print('failed to connect to to service')
+
+    def start(self):
         while True:
             self.Input()
 
@@ -29,14 +35,14 @@ class roulete:
             if letter not in mask:
                 raise Exception("Неправильный цвет")
             self.userInput = letter
-        self.publisher.publish(self.userInput)
-        self.r.sleep()
-
-    def callback(self, data):
-        if data.data:
+        response = self.s(self.userInput)
+        if response.response == 'win':
             rospy.loginfo('Congratulations')
         else:
             rospy.loginfo('Next time will be better')
+        self.r.sleep()
+
+
 
 
 
@@ -46,6 +52,6 @@ def main():
 
 
 if __name__ == '__main__':
+    print('started')
+    rospy.loginfo('started')
     main()
-
-
